@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Online Shop</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<header><h1 id="name">My Online Shop</h1><p class="sub" id="tag"></p></header>
+<main><div id="list" class="grid"><p class="msg">Loading…</p></div></main>
+<script>
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+fetch("items.json?v="+Date.now()).then(r=>r.json()).then(d=>{
+  const s=d.shop||{},c=s.contact||"";
+  document.getElementById("name").textContent=document.title=s.name||"My Online Shop";
+  document.getElementById("tag").textContent=s.tagline||"";
+  const items=[...(d.items||[])].sort((a,b)=>b.createdAt-a.createdAt);
+  document.getElementById("list").innerHTML=items.length?items.map(it=>{
+    const p=it.photos||[];let buy="";
+    if(!it.sold&&c){buy=/^https?:\/\//.test(c)?`<a class="btn primary" href="${esc(c)}" target="_blank" rel="noopener">Contact seller</a>`
+      :c.includes("@")&&!c.includes(" ")?`<a class="btn primary" href="mailto:${esc(c)}?subject=${encodeURIComponent("Interested in: "+it.title)}">Message seller</a>`
+      :`<span class="note">Contact: ${esc(c)}</span>`}
+    return `<article class="card ${it.sold?"sold":""}">
+      ${p.length?`<img class="hero" src="${esc(p[0])}" alt="${esc(it.title)}">`:'<div class="noimg">No photo</div>'}
+      ${p.length>1?`<div class="thumbs">${p.map((x,i)=>`<img src="${esc(x)}" class="${i?"":"on"}" alt="">`).join("")}</div>`:""}
+      <div class="body"><h3 class="title">${esc(it.title)}${it.sold?'<span class="badge">SOLD</span>':""}</h3>
+      <div class="price">${esc(it.price)}</div><p class="desc">${esc(it.desc)}</p><div class="row">${buy}</div></div></article>`}).join("")
+    :'<p class="msg">Nothing for sale right now. Check back soon!</p>';
+}).catch(()=>document.getElementById("list").innerHTML='<p class="msg">Could not load items.</p>');
+document.addEventListener("click",e=>{const t=e.target.closest(".thumbs img");if(!t)return;
+  const c=t.closest(".card");c.querySelector(".hero").src=t.src;c.querySelectorAll(".thumbs img").forEach(i=>i.classList.toggle("on",i===t))});
+</script></body></html>
